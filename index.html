@@ -2,59 +2,126 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Parking Availability Display</title>
+<title>Smart Parking Display</title>
 
 <!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
+<!-- Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
   body {
     margin: 0;
     height: 100vh;
-    background: #0b1220;
-    color: #ffffff;
-    font-family: Arial, Helvetica, sans-serif;
+    background: radial-gradient(circle at top, #0b4a6f, #020617);
+    font-family: 'Inter', sans-serif;
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    color: #e5f0ff;
   }
-  .container { text-align: center; width: 100%; }
-  h1 { font-size: 3vw; margin-bottom: 10px; }
-  .label { font-size: 2.5vw; color: #b0b8d1; }
-  .slots { font-size: 22vw; font-weight: bold; }
+
+  .panel {
+    width: 92%;
+    max-width: 1200px;
+    background: linear-gradient(180deg, #081a2b, #020617);
+    border-radius: 20px;
+    padding: 45px 55px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    text-align: center;
+  }
+
+  .title {
+    font-size: 2.3vw;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #7dd3fc;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 1.3vw;
+    color: #94a3b8;
+    margin-bottom: 32px;
+  }
+
+  .slots {
+    font-size: 22vw;
+    font-weight: 700;
+    line-height: 1;
+    color: #e0f2fe;
+    text-shadow: 0 0 30px rgba(56,189,248,0.25);
+  }
+
+  .slots-label {
+    font-size: 2.1vw;
+    letter-spacing: 3px;
+    color: #38bdf8;
+    margin-top: -12px;
+  }
+
+  .status {
+    margin-top: 38px;
+  }
+
   .led {
-    width: 120px; height: 120px; border-radius: 50%;
-    margin: 20px auto;
-    background: #333;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    background: #1e293b;
+    border: 3px solid #334155;
   }
+
   .green {
-    background: radial-gradient(circle at 30% 30%, #7CFF7C, #0f7a0f);
-    box-shadow: 0 0 40px #00ff00;
+    background: radial-gradient(circle at 30% 30%, #4ade80, #15803d);
+    box-shadow: 0 0 35px rgba(74,222,128,0.9);
+    border-color: #22c55e;
   }
+
   .red {
-    background: radial-gradient(circle at 30% 30%, #ff7c7c, #7a0f0f);
-    box-shadow: 0 0 40px #ff0000;
+    background: radial-gradient(circle at 30% 30%, #f87171, #991b1b);
+    box-shadow: 0 0 35px rgba(248,113,113,0.9);
+    border-color: #ef4444;
   }
-  .status-text { font-size: 2vw; }
+
+  .status-text {
+    font-size: 1.8vw;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #e5f0ff;
+  }
+
+  footer {
+    margin-top: 32px;
+    font-size: 1vw;
+    color: #64748b;
+    letter-spacing: 1px;
+  }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <h1>🚗 PARKING STATUS</h1>
+<div class="panel">
+  <div class="title">IOT Based Smart Car Parking Management System</div>
+  <div class="subtitle">Real-Time Parking Availability Display</div>
 
-  <div class="label">SLOTS AVAILABLE</div>
   <div class="slots" id="slotsLeft">--</div>
+  <div class="slots-label">SLOTS AVAILABLE</div>
 
-  <div class="led" id="statusLed"></div>
-  <div class="status-text" id="statusText">Loading...</div>
+  <div class="status">
+    <div class="led" id="statusLed"></div>
+    <div class="status-text" id="statusText">CHECKING STATUS</div>
+  </div>
+
+  <footer>ESP32 • Firebase • IoT Platform</footer>
 </div>
 
 <script>
-  // 🔥 Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyDA2IVitsAVHCXqi1q9jevMhTrX-kFaQpM",
     databaseURL: "https://smart-parking-monitor-6ae5e-default-rtdb.asia-southeast1.firebasedatabase.app"
@@ -62,36 +129,25 @@
 
   firebase.initializeApp(firebaseConfig);
 
-  // 🔐 Login (same UID as ESP32)
   firebase.auth().signInWithEmailAndPassword(
     "nabatechworld@gmail.com",
     "123456"
   );
 
-  // ✅ WAIT FOR AUTH
   firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-      console.log("Not logged in yet");
-      return;
-    }
+    if (!user) return;
 
-    console.log("Logged in UID:", user.uid);
-
-    // 🔥 NOW database access is allowed
-    const db = firebase.database();
-
-    db.ref("parking/slotLeft").on("value", snapshot => {
+    firebase.database().ref("parking/slotLeft").on("value", snapshot => {
       const slotLeft = snapshot.val();
       if (slotLeft === null) return;
+
+      document.getElementById("slotsLeft").innerText = slotLeft;
 
       const led = document.getElementById("statusLed");
       const text = document.getElementById("statusText");
 
-      document.getElementById("slotsLeft").innerText = slotLeft;
-
       led.classList.remove("green", "red");
 
-      // ✅ PROMOTION LOGIC (FINAL)
       if (slotLeft >= 1) {
         led.classList.add("green");
         text.innerText = "PARKING AVAILABLE";

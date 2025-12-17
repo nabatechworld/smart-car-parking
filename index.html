@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Parking Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+
+<h2>🚗 Smart Parking System</h2>
+
+<p>Total Slots: <span id="total"></span></p>
+<p>Parked Cars: <span id="parked"></span></p>
+<p>Slot Left: <span id="left"></span></p>
+<p>Gate Status: <b><span id="gate"></span></b></p>
+
+<script>
+  var firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    databaseURL: "https://your-project.firebaseio.com/"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  var db = firebase.database();
+
+  db.ref("parking").on("value", (snapshot) => {
+    var data = snapshot.val();
+    document.getElementById("total").innerHTML = data.totalSlots;
+    document.getElementById("parked").innerHTML = data.parkedCars;
+    document.getElementById("left").innerHTML = data.slotLeft;
+    document.getElementById("gate").innerHTML = data.gateStatus;
+  });
+</script>
+
+</body>
+</html>

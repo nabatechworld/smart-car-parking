@@ -6,8 +6,8 @@
 
 <!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
   body {
@@ -20,71 +20,37 @@
     align-items: center;
     justify-content: center;
   }
-
-  .container {
-    text-align: center;
-    width: 100%;
-  }
-
-  h1 {
-    font-size: 3vw;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-  }
-
-  .label {
-    font-size: 2.5vw;
-    color: #b0b8d1;
-  }
-
-  .slots {
-    font-size: 22vw;
-    font-weight: bold;
-    margin: 10px 0;
-  }
-
-  .led-wrapper {
-    margin-top: 20px;
-  }
-
+  .container { text-align: center; width: 100%; }
+  h1 { font-size: 3vw; margin-bottom: 10px; }
+  .label { font-size: 2.5vw; color: #b0b8d1; }
+  .slots { font-size: 22vw; font-weight: bold; }
   .led {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    margin: auto;
+    width: 120px; height: 120px; border-radius: 50%;
+    margin: 20px auto;
     background: #333;
   }
-
   .green {
     background: radial-gradient(circle at 30% 30%, #7CFF7C, #0f7a0f);
     box-shadow: 0 0 40px #00ff00;
   }
-
   .red {
     background: radial-gradient(circle at 30% 30%, #ff7c7c, #7a0f0f);
     box-shadow: 0 0 40px #ff0000;
   }
-
-  .status-text {
-    font-size: 2vw;
-    margin-top: 15px;
-    letter-spacing: 1px;
-  }
+  .status-text { font-size: 2vw; }
 </style>
 </head>
 
 <body>
 
 <div class="container">
-  <h1>🚗 PARKING AVAILABLE</h1>
+  <h1>🚗 PARKING STATUS</h1>
 
-  <div class="label">SLOTS LEFT</div>
+  <div class="label">SLOTS AVAILABLE</div>
   <div class="slots" id="slotsLeft">--</div>
 
-  <div class="led-wrapper">
-    <div class="led" id="statusLed"></div>
-    <div class="status-text" id="statusText">Loading...</div>
-  </div>
+  <div class="led" id="statusLed"></div>
+  <div class="status-text" id="statusText">Loading...</div>
 </div>
 
 <script>
@@ -100,30 +66,40 @@
   firebase.auth().signInWithEmailAndPassword(
     "nabatechworld@gmail.com",
     "123456"
-  ).catch(err => console.error(err));
+  );
 
-  const db = firebase.database();
-
-  db.ref("parking/slotLeft").on("value", snapshot => {
-    const slotLeft = snapshot.val();
-    if (slotLeft === null) return;
-
-    const led = document.getElementById("statusLed");
-    const text = document.getElementById("statusText");
-
-    document.getElementById("slotsLeft").innerText = slotLeft;
-
-    // RESET
-    led.classList.remove("green", "red");
-
-    // ✅ CORRECT PROMOTION LOGIC
-    if (slotLeft >= 1) {
-      led.classList.add("green");
-      text.innerText = "PARKING AVAILABLE";
-    } else {
-      led.classList.add("red");
-      text.innerText = "PARKING FULL";
+  // ✅ WAIT FOR AUTH
+  firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+      console.log("Not logged in yet");
+      return;
     }
+
+    console.log("Logged in UID:", user.uid);
+
+    // 🔥 NOW database access is allowed
+    const db = firebase.database();
+
+    db.ref("parking/slotLeft").on("value", snapshot => {
+      const slotLeft = snapshot.val();
+      if (slotLeft === null) return;
+
+      const led = document.getElementById("statusLed");
+      const text = document.getElementById("statusText");
+
+      document.getElementById("slotsLeft").innerText = slotLeft;
+
+      led.classList.remove("green", "red");
+
+      // ✅ PROMOTION LOGIC (FINAL)
+      if (slotLeft >= 1) {
+        led.classList.add("green");
+        text.innerText = "PARKING AVAILABLE";
+      } else {
+        led.classList.add("red");
+        text.innerText = "PARKING FULL";
+      }
+    });
   });
 </script>
 
